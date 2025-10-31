@@ -1,21 +1,24 @@
-from flask import Flask
-from services.cache import db, save_menu_to_cache, get_cached_menu
+from unittest.mock import patch
+from app import app
 
 
-def test_cache_save_and_get():
-    app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+def test_cache_prevents_duplicate_llm_calls():
+    app.config["TESTING"] = True
 
-    db.init_app(app)
+    cached_data = {
+        "restaurant_name": "Cached Restaurant",
+        "date": "2025-10-31",
+        "day_of_week": "pátek",
+        "menu_items": [],
+        "daily_menu": True
+    }
 
-    with app.app_context():
-        db.create_all()
+    with patch('app.get_cached_menu', return_value=cached_data):
+        with patch('app.extract_menu_llm') as mock_llm:
+            client = app.test_client()
 
-        test_data = {"restaurant_name": "Test", "menu_items": []}
+            response = client.post("/", data={"url": "http://test.cz"})
 
-        save_menu_to_cache("http://test.com", "2025-10-31", test_data)
-        cached = get_cached_menu("http://test.com", "2025-10-31")
-
-        assert cached is not None
-        assert cached["restaurant_name"] == "Test"
+            assert response.status_code == 200
+            assert response.json["restaurant_name"] == "Cached Restaurant"
+            assert mock_llm.call_count == 0
