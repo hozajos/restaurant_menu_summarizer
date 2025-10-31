@@ -2,16 +2,6 @@ import re
 
 
 def normalize_price(price_string):
-    """
-    Normalize price from various formats to integer.
-
-    Examples:
-    "145,-" - 145
-    "145 Kč" - 145
-    "145,50" - 146 (rounds up)
-    "145.50" - 146
-    """
-
     cleaned = re.sub(
         r"[Kč\s-]", "", price_string
     )  # Remove currency symbols, dashes, spaces

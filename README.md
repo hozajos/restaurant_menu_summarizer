@@ -1,73 +1,46 @@
 # Menu Summarizer
 
-A small Flask web application.
+Flask aplikace pro extrakci denního menu z webových stránek restaurací pomocí LLM.
 
-## Project Structure
+## Jak spustit projekt
 
-```
-menu-summarizer/
-├── app.py                 # Main Flask application file
-├── requirements.txt       # Python dependencies
-├── .env.example          # Environment variables template
-├── .gitignore            # Git ignore rules
-├── templates/            # HTML templates
-│   ├── index.html       # Homepage template
-│   ├── 404.html         # 404 error page
-│   └── 500.html         # 500 error page
-└── static/               # Static files
-    ├── css/
-    │   └── style.css    # Main stylesheet
-    └── js/
-        └── main.js      # Main JavaScript file
-```
+1. Vytvoř virtual environment:
 
-## Setup Instructions
+python -m venv venv
+source venv/bin/activate
 
-1. **Create a virtual environment:**
-   ```bash
-   python -m venv venv
-   ```
 
-2. **Activate the virtual environment:**
-   - On macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
-   - On Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
+2. Nainstaluj dependencies:
 
-3. **Install dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+pip install -r requirements.txt
 
-4. **Set up environment variables:**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
 
-5. **Run the application:**
-   ```bash
-   python app.py
-   ```
+3. Nastav environment variables:
 
-6. **Visit the app:**
-   Open your browser to `http://localhost:5000`
+Do .env přidej svůj OpenAI API klíč:
+OPENAI_API_KEY=sk-proj-...
 
-## Development
 
-- The app runs in debug mode by default (set `DEBUG=False` in `.env` for production)
-- Templates are in the `templates/` directory
-- Static files (CSS, JS, images) go in the `static/` directory
-- Add new routes in `app.py`
+4. Spusť aplikaci:
 
-## Adding Dependencies
+python app.py
 
-When you add new Python packages:
-```bash
-pip install package-name
-pip freeze > requirements.txt
-```
+
+5. Otevři v prohlížeči: http://localhost:3000
+
+## Jak spustit testy
+
+pytest tests/
+
+Nebo s detaily:
+pytest -v tests/
+
+## Úvahy o řešení
+
+Pro testování jsem použil URL: https://bistroprotiproudu.cz/menu
+
+Zvolil jsem vlastní scraper (BeautifulSoup) jako levnější a rychlejší variantu místo LLM built-in search. Scraped text není moc očištěný, to je záměrné - chtěl jsem aby scraper fungoval pro více různých stránek bez nutnosti přizpůsobování konkrétní struktuře. Do budoucna by šlo přidat LLM search jako fallback v případech, kdy scraper nebude stačit - například když stránka nebude mít dostatek informací v HTML nebo když bude obsah v PDF místo HTML.
+
+Pro LLM API jsem použil OpenAI gpt-4o-mini s kombinací function calling a structured outputs. Zajímavý problém bylo, že mi s OpenAI nešlo dělat function calling a structured output v jednom volání. Musel jsem udělat 2 LLM cally - první chat.completions.create pro tool calling (normalizace cen), druhý responses.parse pro strukturovanou response podle Pydantic modelu (viz dokumentace: https://platform.openai.com/docs/guides/structured-outputs). Výsledky z tools předávám jako text do druhého volání.
+
+Caching jsem implementoval pomocí SQLite a Flask-SQLAlchemy. Cache klíč je URL + datum, protože menu se mění denně. Při startu aplikace se automaticky mažou staré záznamy. Druhý request na stejnou URL vrací data okamžitě z cache bez nového LLM volání.

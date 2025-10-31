@@ -48,3 +48,15 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Database (caching)
+*.db
+*.sqlite
+*.sqlite3
+menu_cache.db

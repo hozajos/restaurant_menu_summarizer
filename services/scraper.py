@@ -83,7 +83,7 @@ def get_html_content(url):
         title = soup.title.get_text(strip=True) if soup.title else None
         cleaned_text = get_text(soup)
         print("page loaded successfully")
-        print(cleaned_text)
+        # print(cleaned_text)
 
         return {
             "url": str(response.url),

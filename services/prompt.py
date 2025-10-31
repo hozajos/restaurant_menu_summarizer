@@ -25,10 +25,11 @@ def current_weekDay():
 
 
 SYSTEM_PROMPT = (
-    "You are a helpful assistant that extracts the daily lunch menu from the provided text."
-    "Return only a valid JSON object with the required keys and types."
-    "Include ONLY items valid for TODAY (based on the provided date/day context)."
-    "Allergens must be an array of strings (use [] if not listed)."
+    "You are a helpful assistant that extracts the daily lunch menu from the provided text. "
+    "Extract the restaurant name from the page content or URL if visible. "
+    "Return only a valid JSON object with the required keys and types. "
+    "Include ONLY items valid for TODAY (based on the provided date/day context). "
+    "Allergens must be an array of strings (use [] if not listed). "
     "IMPORTANT: Do not hallucinate. Your response must be based solely on the given text."
 )
 

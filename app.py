@@ -17,8 +17,18 @@ from services.prompt import (
     SYSTEM_PROMPT,
     user_prompt,
 )
+from services.cache import db, get_cached_menu, save_menu_to_cache, cleanup_old_cache
 
 app = Flask(__name__)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///menu_cache.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db.init_app(app)
+
+with app.app_context():
+    db.create_all()
+    cleanup_old_cache(current_time_prague())
 
 
 @app.errorhandler(ContentNotFoundError)
@@ -84,35 +94,41 @@ def index():
                 400,
             )
 
-        # scrape the website
-        scraped_data = get_html_content(url)
-        scraped_text = scraped_data["text"]
+        today_date = current_time_prague()
+        cached_menu = get_cached_menu(url, today_date)
 
-        # user prompt
-        user_prompt_text = user_prompt(url, scraped_text)
+        if cached_menu:
+            data = cached_menu
+        else:
+            scraped_data = get_html_content(url)
+            scraped_text = scraped_data["text"]
 
-        # call llm
-        menu = extract_menu_llm(
-            system_prompt=SYSTEM_PROMPT,
-            user_prompt=user_prompt_text,
-            model="gpt-4o-mini",
-            temperature=0.0,
-        )
+            user_prompt_text = user_prompt(url, scraped_text)
 
-        # convert each of the menu items to dict.
+            # call llm
+            menu = extract_menu_llm(
+                system_prompt=SYSTEM_PROMPT,
+                user_prompt=user_prompt_text,
+                model="gpt-4o-mini",
+                temperature=0.0,
+            )
 
-        menu_item_list = []
-        for item in menu.menu_items:
-            menu_item_list.append(item.model_dump())
+            # convert each of the menu items to dict.
+            menu_item_list = []
+            for item in menu.menu_items:
+                menu_item_list.append(item.model_dump())
 
-        # structure the data
-        data = {
-            "restaurant_name": menu.restaurant_name,
-            "date": current_time_prague(),
-            "day_of_week": current_weekDay(),
-            "menu_items": menu_item_list,
-            "daily_menu": menu.daily_menu,
-        }
+            # structure the data
+            data = {
+                "restaurant_name": menu.restaurant_name,
+                "date": today_date,
+                "day_of_week": current_weekDay(),
+                "menu_items": menu_item_list,
+                "daily_menu": menu.daily_menu,
+            }
+
+            # Save to cache
+            save_menu_to_cache(url, today_date, data)
 
         json.dumps(data, ensure_ascii=False)  # python dict -> to formatted JSON
 
