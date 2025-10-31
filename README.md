@@ -4,10 +4,10 @@ Flask aplikace pro extrakci denního menu z webových stránek restaurací pomoc
 
 ## Jak spustit projekt
 
-1. Vytvoř virtual environment:
+1. Vytvoř a aktivuj virtual environment:
 
-python -m venv venv
-source venv/bin/activate
+- python -m venv venv
+- source venv/bin/activate
 
 
 2. Nainstaluj dependencies:
